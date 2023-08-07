@@ -43,6 +43,9 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
     whether ray.get should be used when calling the method or not (for more information and illustration refer
     to ray_ease.remote_as_local.RemoteActorAsLocal implementation).
 
+    Additionally, the ray.remote args and kwargs can be provided to this decorator and are used when calling
+    ray.remote.
+
     :param callable_obj: Either a function or a class to parallelize with the Ray framework.
     :type callable_obj: Callable[..., Any]
     :raises TypeError: Raised if the decorated object is not a callable.
