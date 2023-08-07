@@ -10,7 +10,7 @@ $ pip install ray-ease
 
 ## Usage
 
-Effortlessly parallelize your code by simply decorating your functions or classes with the `parallelize` decorator. Retrieve the results effortlessly using the `retrieve_parallel_loop` function. This enables you to parallelize your code with Ray if it's been explicitly initialized or run it serially without any overhead from Ray.
+Effortlessly parallelize your code by simply decorating your functions or classes with the `parallelize` decorator. Retrieve the results using the `retrieve_parallel_loop` function. This enables you to parallelize your code with Ray if it's been explicitly initialized or run it serially without any overhead from Ray.
 
 ### Running a Task
 
