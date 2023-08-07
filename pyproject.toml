@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ray_ease"
-version = "0.0.2"
+version = "0.0.3"
 description = "This package is a convenient Ray wrapper that enables the utilization of Ray decorated functions and actors as if they were regular local functions. With this tool, your program can seamlessly run in both parallel and serial modes without requiring any code modifications. This capability is particularly advantageous during the debugging phase, as parallelizing code may inadvertently introduce unnecessary complexities and overhead."
 authors = ["Arthur Elskens"]
 license = "MIT"
