@@ -72,7 +72,7 @@ See [Ray version](https://docs.ray.io/en/latest/ray-core/walkthrough.html#callin
 
 ### Comparison with and without Ray
 
-Parallel computation with Ray ([base example](https://docs.ray.io/en/latest/ray-core/tips-for-first-time.html#tip-1-delay-ray-get)):
+Parallel computation with Ray (see [base example](https://docs.ray.io/en/latest/ray-core/tips-for-first-time.html#tip-1-delay-ray-get)):
 
 ```Python
 import ray
