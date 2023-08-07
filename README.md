@@ -92,14 +92,14 @@ print("duration =", time.time() - start)
 print("results =", results)
 ```
 
-This yield the following output:
+This yields the following output:
 
 ```
 duration = 1.0233514308929443
 results =  [0, 1, 2, 3]
 ```
 
-As opposed to Serial computation, by commenting `import ray` and `ray.init(num_cpus=4)` lines:
+As opposed to serial computation, by commenting `import ray` and `ray.init(num_cpus=4)` lines:
 
 ```Python
 # import ray
