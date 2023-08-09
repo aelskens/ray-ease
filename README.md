@@ -14,6 +14,9 @@ $ pip install ray-ease
 
 Effortlessly parallelize your code by simply decorating your functions or classes with the `parallelize` decorator. Retrieve the results using the `retrieve_parallel_loop` function. This enables you to parallelize your code with Ray if it's been explicitly initialized or run it serially without any overhead from Ray.
 
+> [!NOTE]  
+> In order to correctly decorate functions and classes when parallelizing, `ray.init(...)` should declared in your script before defining any of the decorated functions or classes. We recommend you to use a environment variable to initialize Ray or not when needed.
+
 ### Running a Task
 
 ```Python
@@ -136,4 +139,4 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 
 `ray-ease` was created by Arthur Elskens. It is licensed under the terms of the MIT license.
 
-[1]: https://github.com/aelskens
+[1]: https://github.com/aelskens/ray-ease
