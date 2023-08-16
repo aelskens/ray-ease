@@ -1,6 +1,6 @@
 # ray-ease
 
-[![GitHub-Mark-32px](https://github.com/aelskens/ray-ease/assets/74192786/a497a578-07c1-4348-a0a8-e3f9ec1a2fb5)][1]
+[![GitHub-Mark-32px](https://github.githubassets.com/images/modules/site/icons/footer/github-mark.svg)][1]
 
 This package is a convenient Ray wrapper that enables the utilization of Ray decorated functions and actors as if they were regular local functions. With this tool, your program can seamlessly run in both parallel and serial modes without requiring any code modifications. This capability is particularly advantageous during the debugging phase, as parallelizing code may inadvertently introduce unnecessary complexities and overhead.
 
@@ -131,12 +131,26 @@ duration = 4.021065711975098
 results =  [0, 1, 2, 3]
 ```
 
+<p align="right">(<a href="#ray-ease">back to top</a>)</p>
+
 ## Contributing
 
 Interested in contributing? Check out the contributing guidelines. Please note that this project is released with a Code of Conduct. By contributing to this project, you agree to abide by its terms.
 
+<p align="right">(<a href="#ray-ease">back to top</a>)</p>
+
 ## License
 
-`ray-ease` was created by Arthur Elskens. It is licensed under the terms of the MIT license.
+`ray-ease` was created by Arthur Elskens. It is licensed under the terms of the MIT license. See LICENSE.txt for more information.
+
+<p align="right">(<a href="#ray-ease">back to top</a>)</p>
+
+## Contact
+
+Arthur Elskens - arthurelsk@gmail.com
+
+Project Link: [https://github.com/aelskens/ray-ease](https://github.com/aelskens/ray-ease)
+
+<p align="right">(<a href="#ray-ease">back to top</a>)</p>
 
 [1]: https://github.com/aelskens/ray-ease
