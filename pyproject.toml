@@ -9,6 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.10.6"
 ray = {extras = ["default"], version = ">=2.6.2"}
+tqdm = ">=4.66.1"
 
 [tool.poetry.group.dev.dependencies]
 twine = ">=4.0.2"
