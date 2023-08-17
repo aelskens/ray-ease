@@ -4,7 +4,7 @@ from typing import Any, Callable
 
 import ray
 
-from .remote_as_local import RemoteActorAsLocal
+from .remote_as_local import remote_actor_as_local
 
 
 def overload(decorator: Callable[..., Any]) -> Callable[..., Any]:
@@ -75,6 +75,7 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
                 return self.callable_obj.remote(*args, **kwargs)
 
     elif inspect.isclass(callable_obj):
+        initial_cls = callable_obj
         callable_obj = ray_remote(callable_obj)
 
         class _Wrapper:
@@ -82,6 +83,7 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
                 self.callable_obj = callable_obj
 
             def __call__(self, *args: Any, **kwargs: Any) -> Any:
-                return RemoteActorAsLocal(self.callable_obj.remote(*args, **kwargs))
+                remoteHandler = remote_actor_as_local(initial_cls)
+                return remoteHandler(self.callable_obj.remote(*args, **kwargs), *args, **kwargs)
 
     return _Wrapper(callable_obj)
