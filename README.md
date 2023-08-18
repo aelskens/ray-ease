@@ -141,7 +141,7 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 
 ## License
 
-`ray-ease` was created by Arthur Elskens. It is licensed under the terms of the MIT license. See LICENSE.txt for more information.
+`ray-ease` was created by Arthur Elskens. It is licensed under the terms of the MIT license. See LICENSE for more information.
 
 <p align="right">(<a href="#ray-ease">back to top</a>)</p>
 
