@@ -96,7 +96,7 @@ duration = 1.0233514308929443
 results =  [0, 1, 2, 3]
 ```
 
-As opposed to serial computation, by specifying to `ray_ease` to use the *serial config* with `ray_ease_init("serial")`:
+As opposed to serial computation, obtained by specifying to `ray_ease` to use the *serial config* with `ray_ease_init("serial")`:
 
 ```Python
 import time
