@@ -1,30 +1,40 @@
 import inspect
-from functools import wraps
-from typing import Any, Callable
+import os
+from typing import Any, Callable, Dict, Iterable, Optional
 
 import ray
+import tqdm
+from ray._private.worker import BaseContext
+from utils import overload
 
 from .remote_as_local import remote_actor_as_local
 
 
-def overload(decorator: Callable[..., Any]) -> Callable[..., Any]:
-    """A decorator to overload another decorator to allow using it with or without parentheses:
-    @decorator(with, arguments, and=kwargs) or @decorator.
+def init(*args: Any, config: str = "ray", **kwargs: Any) -> Optional[BaseContext]:
+    """Wrapper around the `ray.init()` function to specify whether the program should run in a serial or
+    in a parallel manner.
 
-    :param decorator: The decorator to overload.
-    :type decorator: Callable[..., Any]
-    :return: The overloaded decorator.
-    :rtype: Callable[..., Any]
+    :param config: The configuration in which the code will be executed. This can either be `ray` to
+    achieve parallelization or `serial` to execute the program as traditional python program, defaults
+    to "ray".
+    :type config: str, optional
+    :return: For `config="ray"`, the wrapping function returns the ray context similarly to that of
+    `ray.init()`. Otherwise, including the case where `config="serial"`, it returns None.
+    :rtype: Optional[BaseContext]
     """
 
-    @wraps(decorator)
-    def overloaded_decorator(*args: Any, **kwargs: Any) -> Callable[..., Any]:
-        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
-            return decorator(args[0])
-        else:
-            return lambda callable_obj: decorator(callable_obj, *args, **kwargs)
+    if config in ["serial"]:
+        os.environ["RAY_EASE"] = config
 
-    return overloaded_decorator
+        return
+
+    elif config in ["ray"]:
+        os.environ["RAY_EASE"] = config
+
+        return ray.init(*args, **kwargs)
+
+    else:
+        return
 
 
 @overload
@@ -87,3 +97,33 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
                 return remoteHandler(self.callable_obj.remote(*args, **kwargs), *args, **kwargs)
 
     return _Wrapper(callable_obj)
+
+
+def retrieve_parallel_loop(
+    loop: Iterable[Any], parallel_progress: bool = False, parallel_progress_kwargs: Dict[str, Any] = {}
+) -> Iterable[Any]:
+    """Retrieve the results from a pseudo-parallelized loop. It is a pseudo-parallelized rather than a
+    parallelized loop because if Ray is not initialized, then the loop is serial instead.
+
+    :param loop: The pseudo-parallelized loop.
+    :type loop: Iterable[Any]
+    :param parallel_progress: Whether to display the progression bar with the `tqdm` package or not. This
+    argument is exclusively useful when parallelizing as the computations are performed when `ray.get()` is
+    called. In serial computation, everything is already finished at this stage. Defaults to False.
+    :type parallel_progress: bool, optional
+    :param parallel_progress_kwargs: A dictionary of the traditional arguments allowed in `tqdm.tqdm()`,
+    defaults to {}.
+    :type parallel_progress_kwargs: Dict[str, Any], optional
+    :return: The resulting iterable.
+    :rtype: Iterable[Any]
+    """
+
+    if ray.is_initialized():
+        if parallel_progress:
+            # Remove eventual total key-value because automatically computed hereunder
+            parallel_progress_kwargs.pop("total", None)
+            return [ray.get(obj) for obj in tqdm.tqdm(loop, total=len(loop), **parallel_progress_kwargs)]
+
+        return ray.get(loop)
+
+    return loop

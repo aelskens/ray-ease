@@ -1,30 +1,10 @@
 import inspect
-from typing import Any, Callable, Dict, Iterable
+from typing import Any, Callable
 
 import ray
-import tqdm
 from ray.actor import ActorClass
 
-
-def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator use to memoize the dynamic inheritence mechanism.
-
-    :param callable_obj: The closure that provides the child class with a parent class to
-    inherite from.
-    :type callable_obj: Callable[..., Any]
-    :return: The wrapper that memoizes the dynamic inheritence mechanisms.
-    :rtype: Callable[..., Any]
-    """
-
-    class Wrapper:
-        def __init__(self, callable_obj: Callable[..., Any]) -> None:
-            self.callable_obj = callable_obj
-            self.memoization = {}
-
-        def __call__(self, *args: Any):
-            return self.memoization.setdefault(args, self.callable_obj(*args))
-
-    return Wrapper(callable_obj)
+from .utils import memoize
 
 
 @memoize
@@ -117,33 +97,3 @@ def remote_actor_as_local(base_cls: Callable[..., Any]) -> Callable[..., Any]:
             return dir(self._remote_handle)
 
     return RemoteActorAsLocal
-
-
-def retrieve_parallel_loop(
-    loop: Iterable[Any], parallel_progress: bool = False, parallel_progress_kwargs: Dict[str, Any] = {}
-) -> Iterable[Any]:
-    """Retrieve the results from a pseudo-parallelized loop. It is a pseudo-parallelized rather than a
-    parallelized loop because if Ray is not initialized, then the loop is serial instead.
-
-    :param loop: The pseudo-parallelized loop.
-    :type loop: Iterable[Any]
-    :param parallel_progress: Whether to display the progression bar with the `tqdm` package or not. This
-    argument is exclusively useful when parallelizing as the computations are performed when `ray.get()` is
-    called. In serial computation, everything is already finished at this stage. Defaults to False.
-    :type parallel_progress: bool, optional
-    :param parallel_progress_kwargs: A dictionary of the traditional arguments allowed in `tqdm.tqdm()`,
-    defaults to {}.
-    :type parallel_progress_kwargs: Dict[str, Any], optional
-    :return: The resulting iterable.
-    :rtype: Iterable[Any]
-    """
-
-    if ray.is_initialized():
-        if parallel_progress:
-            # Remove eventual total key-value because automatically computed hereunder
-            parallel_progress_kwargs.pop("total", None)
-            return [ray.get(obj) for obj in tqdm.tqdm(loop, total=len(loop), **parallel_progress_kwargs)]
-
-        return ray.get(loop)
-
-    return loop
