@@ -10,7 +10,7 @@ from .remote_as_local import remote_actor_as_local
 from .utils import overload
 
 
-def init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext]:
+def ray_ease_init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext]:
     """Wrapper around the `ray.init()` function to specify whether the program should run in a serial or
     in a parallel manner.
 

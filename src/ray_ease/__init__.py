@@ -6,4 +6,4 @@ try:
 except PackageNotFoundError:
     __version__ = "dev"
 
-from .core import init, parallelize, retrieve_parallel_loop
+from .core import parallelize, ray_ease_init, retrieve_parallel_loop
