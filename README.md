@@ -1,7 +1,5 @@
 # ray-ease
 
-[![GitHub-Mark-32px](https://github.githubassets.com/images/modules/site/icons/footer/github-mark.svg)][1]
-
 This package is a convenient Ray wrapper that enables the utilization of Ray decorated functions and actors as if they were regular local functions. With this tool, your program can seamlessly run in both parallel and serial modes without requiring any code modifications. This capability is particularly advantageous during the debugging phase, as parallelizing code may inadvertently introduce unnecessary complexities and overhead.
 
 ## Installation
@@ -145,12 +143,8 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 
 <p align="right">(<a href="#ray-ease">back to top</a>)</p>
 
-## Contact
+## Useful links
 
-Arthur Elskens - arthurelsk@gmail.com
-
-Project Link: [https://github.com/aelskens/ray-ease](https://github.com/aelskens/ray-ease)
+Repository: [https://github.com/aelskens/ray-ease](https://github.com/aelskens/ray-ease)
 
 <p align="right">(<a href="#ray-ease">back to top</a>)</p>
-
-[1]: https://github.com/aelskens/ray-ease
