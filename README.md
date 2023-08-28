@@ -1,6 +1,6 @@
 # ray-ease
 
-This package is a convenient Ray wrapper that enables the utilization of Ray decorated functions and actors as if they were regular local functions. With this tool, your program can seamlessly run in both parallel and serial modes without requiring any code modifications. This capability is particularly advantageous during the debugging phase, as parallelizing code may inadvertently introduce unnecessary complexities and overhead.
+This package is a convenient [Ray](https://www.ray.io) wrapper that enables the utilization of Ray decorated functions and actors as if they were regular local functions. With this tool, your program can seamlessly run in both parallel and serial modes without requiring any code modifications. This capability is particularly **advantageous during the debugging phase**, as parallelizing code may inadvertently introduce unnecessary complexities and overhead.
 
 ## Installation
 
@@ -12,16 +12,12 @@ $ pip install ray-ease
 
 Effortlessly parallelize your code by simply decorating your functions or classes with the `parallelize` decorator. Retrieve the results using the `retrieve_parallel_loop` function. This enables you to parallelize your code with Ray if it's been explicitly initialized or run it serially without any overhead from Ray.
 
-> [!NOTE]  
-> In order to correctly decorate functions and classes when parallelizing, `ray.init(...)` should declared in your script before defining any of the decorated functions or classes. We recommend you to use a environment variable to initialize Ray or not when needed.
-
 ### Running a Task
 
 ```Python
-import ray
-from ray_ease import parallelize, retrieve_parallel_loop
+from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
 
-ray.init()
+ray_ease_init()
 
 # Define the square task.
 @parallelize
@@ -41,10 +37,9 @@ See [Ray version](https://docs.ray.io/en/latest/ray-core/walkthrough.html#runnin
 ### Calling an Actor
 
 ```Python
-import ray
-from ray_ease import parallelize, retrieve_parallel_loop
+from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
 
-ray.init()
+ray_ease_init()
 
 # Define the Counter actor.
 @parallelize
@@ -78,11 +73,10 @@ See [Ray version](https://docs.ray.io/en/latest/ray-core/walkthrough.html#callin
 Parallel computation with Ray (see [base example](https://docs.ray.io/en/latest/ray-core/tips-for-first-time.html#tip-1-delay-ray-get)):
 
 ```Python
-import ray
 import time
-from ray_ease import parallelize, retrieve_parallel_loop
+from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
 
-ray.init(num_cpus=4) # Initialize Ray and specify this system has 4 CPUs.
+ray_ease_init(num_cpus=4) # Initialize Ray and specify this system has 4 CPUs.
 
 @parallelize
 def do_some_work(x):
@@ -102,14 +96,13 @@ duration = 1.0233514308929443
 results =  [0, 1, 2, 3]
 ```
 
-As opposed to serial computation, by commenting `import ray` and `ray.init(num_cpus=4)` lines:
+As opposed to serial computation, by specifying to `ray_ease` to use the *serial config* with `ray_ease_init("serial")`:
 
 ```Python
-# import ray
 import time
-from ray_ease import parallelize, retrieve_parallel_loop
+from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
 
-# ray.init(num_cpus=4) # Initialize Ray and specify this system has 4 CPUs.
+ray_ease_init("serial")
 
 @parallelize
 def do_some_work(x):
