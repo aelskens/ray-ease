@@ -5,9 +5,9 @@ from typing import Any, Callable, Dict, Iterable, Optional
 import ray
 import tqdm
 from ray._private.worker import BaseContext
-from utils import overload
 
 from .remote_as_local import remote_actor_as_local
+from .utils import overload
 
 
 def init(*args: Any, config: str = "ray", **kwargs: Any) -> Optional[BaseContext]:
