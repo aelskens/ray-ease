@@ -115,7 +115,7 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
             self.memoization = {}
 
         def __call__(self, *usage_args: Any, **usage_kwargs: Any) -> Any:
-            key = self.args + (self.callable_obj,) + tuple(sorted(self.kwargs.items()))
+            key = self.args + tuple(sorted(self.kwargs.items()))
 
             if key in self.memoization:
                 usable_callable_obj = self.memoization[key]
