@@ -1,3 +1,4 @@
+import pickle
 from functools import wraps
 from typing import Any, Callable
 
@@ -32,12 +33,17 @@ def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
     :rtype: Callable[..., Any]
     """
 
-    class Wrapper:
+    class _Wrapper:
         def __init__(self, callable_obj: Callable[..., Any]) -> None:
             self.callable_obj = callable_obj
             self.memoization = {}
 
         def __call__(self, *args: Any):
-            return self.memoization.setdefault(args, self.callable_obj(*args))
+            key = pickle.dumps(args)
+            if key in self.memoization:
+                return self.memoization[key]
 
-    return Wrapper(callable_obj)
+            self.memoization[key] = self.callable_obj(*args)
+            return self.memoization[key]
+
+    return _Wrapper(callable_obj)
