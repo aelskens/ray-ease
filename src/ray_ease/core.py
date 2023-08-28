@@ -18,7 +18,7 @@ def ray_ease_init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[Ba
     achieve parallelization or `serial` to execute the program as traditional python program, defaults
     to "ray".
     :type config: str, optional
-    :return: For `config="ray"`, the wrapping function returns the ray context similarly to that of
+    :return: For `config="ray"`, the wrapping function returns the Ray context similarly to that of
     `ray.init()`. Otherwise, including the case where `config="serial"`, it returns None.
     :rtype: Optional[BaseContext]
     """
