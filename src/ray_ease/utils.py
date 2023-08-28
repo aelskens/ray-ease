@@ -1,4 +1,3 @@
-import pickle
 from functools import wraps
 from typing import Any, Callable
 
@@ -24,12 +23,12 @@ def overload(decorator: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator use to memoize the dynamic inheritence mechanism.
+    """Decorator use to memoize the dynamic inheritance mechanism.
 
     :param callable_obj: The closure that provides the child class with a parent class to
-    inherite from.
+    inherit from.
     :type callable_obj: Callable[..., Any]
-    :return: The wrapper that memoizes the dynamic inheritence mechanisms.
+    :return: The wrapper that memoizes the dynamic inheritance mechanisms.
     :rtype: Callable[..., Any]
     """
 
@@ -39,7 +38,7 @@ def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
             self.memoization = {}
 
         def __call__(self, *args: Any):
-            key = pickle.dumps(args)
+            key = args
             if key in self.memoization:
                 return self.memoization[key]
 
