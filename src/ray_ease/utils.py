@@ -23,12 +23,11 @@ def overload(decorator: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator use to memoize the dynamic inheritance mechanism.
+    """Decorator use to memoize a callable.
 
-    :param callable_obj: The closure that provides the child class with a parent class to
-    inherit from.
+    :param callable_obj: The callable to memoize.
     :type callable_obj: Callable[..., Any]
-    :return: The wrapper that memoizes the dynamic inheritance mechanisms.
+    :return: The wrapper that memoizes the given callable with its arguments.
     :rtype: Callable[..., Any]
     """
 

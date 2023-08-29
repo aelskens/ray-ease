@@ -42,6 +42,8 @@ def _parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs:
     utilization, given its dependence on whether ray initialization has occurred, this core function is
     enveloped by another layer. This added layer serves to defer the instantiation of the decorated
     callable_obj until the moment of its invocation.
+
+    :raises TypeError: Raised if the decorated object is not a callable.
     """
 
     if not callable(callable_obj):
@@ -101,7 +103,6 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
 
     :param callable_obj: Either a function or a class to parallelize with the Ray framework.
     :type callable_obj: Callable[..., Any]
-    :raises TypeError: Raised if the decorated object is not a callable.
     :return: The decorated callable (remote function or actor).
     :rtype: Callable[..., Any]
     """
