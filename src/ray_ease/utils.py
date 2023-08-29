@@ -37,12 +37,12 @@ def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
             self.callable_obj = callable_obj
             self.memoization = {}
 
-        def __call__(self, *args: Any):
-            key = args
+        def __call__(self, *args: Any, **kwargs: Any):
+            key = args + tuple(sorted(kwargs.items()))
             if key in self.memoization:
                 return self.memoization[key]
 
-            self.memoization[key] = self.callable_obj(*args)
+            self.memoization[key] = self.callable_obj(*args, **kwargs)
             return self.memoization[key]
 
     return _Wrapper(callable_obj)
