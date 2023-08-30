@@ -15,12 +15,12 @@ Effortlessly parallelize your code by simply decorating your functions or classe
 ### Running a Task
 
 ```Python
-from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
+import ray_ease as rez
 
-ray_ease_init()
+rez.init()
 
 # Define the square task.
-@parallelize
+@rez.parallelize
 def square(x):
     return x * x
 
@@ -28,7 +28,7 @@ def square(x):
 futures = [square(i) for i in range(4)]
 
 # Retrieve results.
-print(retrieve_parallel_loop(futures))
+print(rez.retrieve(futures))
 # -> [0, 1, 4, 9]
 ```
 
@@ -37,12 +37,12 @@ See [Ray version](https://docs.ray.io/en/latest/ray-core/walkthrough.html#runnin
 ### Calling an Actor
 
 ```Python
-from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
+import ray_ease as rez
 
-ray_ease_init()
+rez.init()
 
 # Define the Counter actor.
-@parallelize
+@rez.parallelize
 class Counter:
     def __init__(self):
         self.i = 0
@@ -62,7 +62,7 @@ for _ in range(10):
     c.incr(1)
 
 # Retrieve final actor state.
-print(retrieve_parallel_loop(c.get()))
+print(rez.retrieve(c.get()))
 # -> 10
 ```
 
@@ -74,17 +74,17 @@ Parallel computation with Ray (see [base example](https://docs.ray.io/en/latest/
 
 ```Python
 import time
-from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
+import ray_ease as rez
 
-ray_ease_init(num_cpus=4) # Initialize Ray and specify this system has 4 CPUs.
+rez.init(num_cpus=4) # Initialize Ray and specify this system has 4 CPUs.
 
-@parallelize
+@rez.parallelize
 def do_some_work(x):
     time.sleep(1) # Replace this with work you need to do.
     return x
 
 start = time.time()
-results = retrieve_parallel_loop([do_some_work(x) for x in range(4)])
+results = rez.retrieve([do_some_work(x) for x in range(4)])
 print("duration =", time.time() - start)
 print("results =", results)
 ```
@@ -96,21 +96,21 @@ duration = 1.0233514308929443
 results =  [0, 1, 2, 3]
 ```
 
-As opposed to serial computation, obtained by specifying to `ray_ease` to use the *serial config* with `ray_ease_init("serial")`:
+As opposed to serial computation, obtained by specifying to `ray_ease` to use the *serial config* with `rez.init("serial")`:
 
 ```Python
 import time
-from ray_ease import parallelize, ray_ease_init, retrieve_parallel_loop
+import ray_ease as rez
 
-ray_ease_init("serial")
+rez.init("serial")
 
-@parallelize
+@rez.parallelize
 def do_some_work(x):
     time.sleep(1) # Replace this with work you need to do.
     return x
 
 start = time.time()
-results = retrieve_parallel_loop([do_some_work(x) for x in range(4)])
+results = rez.retrieve([do_some_work(x) for x in range(4)])
 print("duration =", time.time() - start)
 print("results =", results)
 ```
