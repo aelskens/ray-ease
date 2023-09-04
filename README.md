@@ -1,8 +1,8 @@
-<br />
-<div align="left">
-  <a href="https://github.com/aelskens/ray-ease"><h1 align="left">ray-ease</h1></a>
+# ray-ease
 
-  <p align="left">
+<div align="left">
+    <a href="https://github.com/aelskens/ray-ease">Home</a>
+    ·
     <a href="https://github.com/aelskens/ray-ease/issues">Report Bug</a>
     ·
     <a href="https://github.com/aelskens/ray-ease/issues">Request Feature</a>
@@ -12,7 +12,6 @@
     <a href="https://github.com/aelskens/ray-ease/blob/main/LICENSE">License</a>
     <br />
     Switch from serial to parallel computing without requiring any code modifications.
-  </p>
 </div>
 
 ## About the project
@@ -153,11 +152,5 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 ## License
 
 `ray-ease` was created by Arthur Elskens. It is licensed under the terms of the MIT license. See LICENSE for more information.
-
-<p align="right">(<a href="#ray-ease">back to top</a>)</p>
-
-## Useful links
-
-Repository: [https://github.com/aelskens/ray-ease](https://github.com/aelskens/ray-ease)
 
 <p align="right">(<a href="#ray-ease">back to top</a>)</p>
