@@ -1,4 +1,21 @@
-# ray-ease
+<br />
+<div align="left">
+  <a href="https://github.com/aelskens/ray-ease"><h1 align="left">ray-ease</h1></a>
+
+  <p align="left">
+    <a href="https://github.com/aelskens/ray-ease/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/aelskens/ray-ease/issues">Request Feature</a>
+    ·
+    <a href="https://github.com/aelskens/ray-ease/tree/main/examples">Useful examples</a>
+    ·
+    <a href="https://github.com/aelskens/ray-ease/blob/main/LICENSE">License</a>
+    <br />
+    Switch from serial to parallel computing without requiring any code modifications.
+  </p>
+</div>
+
+## About the project
 
 This package is a convenient [Ray](https://www.ray.io) wrapper that enables the utilization of Ray decorated functions and actors as if they were regular local functions. With this tool, your program can seamlessly run in both parallel and serial modes without requiring any code modifications. This capability is particularly **advantageous during the debugging phase**, as parallelizing code may inadvertently introduce unnecessary complexities and overhead.
 
