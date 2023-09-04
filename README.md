@@ -7,7 +7,7 @@
     ·
     <a href="https://github.com/aelskens/ray-ease/issues">Request Feature</a>
     ·
-    <a href="https://github.com/aelskens/ray-ease/tree/main/examples">Useful examples</a>
+    <a href="https://github.com/aelskens/ray-ease/tree/main/examples">Useful Examples</a>
     ·
     <a href="https://github.com/aelskens/ray-ease/blob/main/LICENSE">License</a>
     <br />
