@@ -31,6 +31,10 @@ def init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext
     elif config in ["ray"]:
         os.environ["RAY_EASE"] = config
 
+        # prevent initializing ray if it has already been initialized
+        if ray.is_initialized():
+            return None
+
         return ray.init(*args, **kwargs)
 
     else:
