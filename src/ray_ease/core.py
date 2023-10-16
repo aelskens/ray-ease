@@ -23,22 +23,20 @@ def init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext
     :rtype: Optional[BaseContext]
     """
 
-    if config in ["serial"]:
-        os.environ["RAY_EASE"] = config
+    os.environ["RAY_EASE"] = config
 
+    if config == "serial":
         return None
 
-    elif config in ["ray"]:
-        os.environ["RAY_EASE"] = config
-
-        # prevent initializing ray if it has already been initialized
+    elif config == "ray":
+        # Prevent initializing ray if it has already been initialized
         if ray.is_initialized():
             return None
 
         return ray.init(*args, **kwargs)
 
     else:
-        return None
+        raise ValueError(f"{config} is not one of the allowed configurations (serial and ray).")
 
 
 def _parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: Any) -> Callable[..., Any]:
