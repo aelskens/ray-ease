@@ -20,28 +20,3 @@ def overload(decorator: Callable[..., Any]) -> Callable[..., Any]:
             return lambda callable_obj: decorator(callable_obj, *args, **kwargs)
 
     return overloaded_decorator
-
-
-def memoize(callable_obj: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator use to memoize a callable.
-
-    :param callable_obj: The callable to memoize.
-    :type callable_obj: Callable[..., Any]
-    :return: The wrapper that memoizes the given callable with its arguments.
-    :rtype: Callable[..., Any]
-    """
-
-    class _Wrapper:
-        def __init__(self, callable_obj: Callable[..., Any]) -> None:
-            self.callable_obj = callable_obj
-            self.memoization = {}
-
-        def __call__(self, *args: Any, **kwargs: Any):
-            key = args + tuple(sorted(kwargs.items()))
-            if key in self.memoization:
-                return self.memoization[key]
-
-            self.memoization[key] = self.callable_obj(*args, **kwargs)
-            return self.memoization[key]
-
-    return _Wrapper(callable_obj)

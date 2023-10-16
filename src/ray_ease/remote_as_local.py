@@ -1,13 +1,12 @@
 import inspect
+from functools import cache
 from typing import Any, Callable
 
 import ray
 from ray.actor import ActorClass
 
-from .utils import memoize
 
-
-@memoize
+@cache
 def remote_actor_as_local(base_cls: Callable[..., Any]) -> Callable[..., Any]:
     """Closure to give a base class from which the RemoteActorAsLocal wrapper will inherite.
 
