@@ -19,7 +19,7 @@ DESCRIPTION = "Switch from serial to parallel computing without requiring any co
 URL = "https://github.com/aelskens/ray-ease"
 EMAIL = "arthurelsk@gmail.com"
 AUTHOR = "Arthur Elskens"
-REQUIRES_PYTHON = ">=3.10.12"
+REQUIRES_PYTHON = ">=3.8"
 VERSION = "0.0.0"
 
 # What packages are optional?
@@ -40,8 +40,7 @@ except FileNotFoundError:
 # Load the package's __version__.py module as a dictionary.
 about = {}
 if not VERSION or VERSION == "0.0.0":
-    project_slug = NAME.lower().replace("-", "_").replace(" ", "_")
-    with open(os.path.join(here, "src", project_slug, "__version__.py")) as f:
+    with open(os.path.join(here, "src", NAME, "__version__.py")) as f:
         exec(f.read(), about)
 else:
     about["__version__"] = VERSION
@@ -130,8 +129,8 @@ setup(
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         "License :: OSI Approved :: MIT",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10.12",
+        f"Programming Language :: Python :: {list(filter(lambda x: x.isnumeric() , REQUIRES_PYTHON))[0]}",
+        f"Programming Language :: Python :: {''.join(filter(lambda x: x in '.1234567890', REQUIRES_PYTHON))}",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
