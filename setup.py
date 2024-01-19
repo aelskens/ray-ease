@@ -22,10 +22,7 @@ AUTHOR = "Arthur Elskens"
 REQUIRES_PYTHON = ">=3.8"
 VERSION = "0.0.0"
 
-# What packages are optional?
-EXTRAS = {
-    # 'fancy feature': ['django'],
-}
+EXTRAS = {}
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -62,44 +59,86 @@ def _load_from_requirements():
 required = _load_from_requirements()
 
 
-class UploadCommand(Command):
-    """Support setup.py upload."""
+class CustomBuildCommand(Command):
+    """Support setup.py custom_build."""
 
-    description = "Build and publish the package."
+    description = "Build the package: bdist, sdist and egg-info."
     user_options = []
 
     @staticmethod
-    def status(s):
-        """Prints things in bold."""
-        print("\033[1m{0}\033[0m".format(s))
+    def status(s: str) -> None:
+        """Prints things in bold.
 
-    def initialize_options(self):
+        :param s: The message to print in the status.
+        :type s: str
+        """
+
+        print(f"\033[1m{s}\033[0m")
+
+    def initialize_options(self) -> None:
         pass
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         pass
 
-    def run(self):
+    def run(self) -> None:
         try:
-            self.status("Removing previous builds…")
+            self.status("Removing previous builds...")
             rmtree(os.path.join(here, "dist"))
         except OSError:
             pass
 
-        self.status("Building Source and Wheel (universal) distribution…")
-        os.system("{0} setup.py sdist bdist_wheel --universal".format(sys.executable))
+        self.status("Building Source and Wheel (universal) distribution...")
+        os.system(f"{sys.executable} setup.py sdist bdist_wheel --universal")
 
-        self.status("Uploading the package to PyPI via Twine…")
-        os.system("twine upload dist/*")
+        sys.exit()
 
-        self.status("Pushing git tags…")
-        os.system("git tag v{0}".format(about["__version__"]))
+
+class UploadCommand(Command):
+    """Support setup.py upload."""
+
+    description = "Upload the package."
+    user_options = [
+        ("repository=", "r", "The repository where it will be uploaded."),
+    ]
+
+    @staticmethod
+    def status(s: str) -> None:
+        """Prints things in bold.
+
+        :param s: The message to print in the status.
+        :type s: str
+        """
+
+        print(f"\033[1m{s}\033[0m")
+
+    def initialize_options(self) -> None:
+        self.repository = "pypi"
+
+    def finalize_options(self) -> None:
+        if self.repository not in ("pypi", "testpypi"):
+            raise Exception(
+                f"The given value ({self.repository}) for parameter --repository is invalid. Available choices are: `pypi` and `testpypi`."
+            )
+
+    def run(self) -> None:
+        self.status("Check dist/* via Twine...")
+        os.system("twine check dist/*")
+
+        if self.repository == "pypi":
+            self.status("Uploading the package to PyPI via Twine...")
+            os.system(f"twine upload dist/*")
+        else:
+            self.status(f"Uploading the package to {self.repository} via Twine...")
+            os.system(f"twine upload -r {self.repository} dist/*")
+
+        self.status("Pushing git tags...")
+        os.system(f"git tag v{about['__version__']}")
         os.system("git push --tags")
 
         sys.exit()
 
 
-# Where the magic happens:
 setup(
     name=NAME,
     version=about["__version__"],
@@ -108,22 +147,14 @@ setup(
     long_description_content_type="text/markdown",
     author=AUTHOR,
     author_email=EMAIL,
-    # If your package require specific python version
     python_requires=REQUIRES_PYTHON,
-    # The url of the repository where this package lives
     url=URL,
     packages=find_packages("src", exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
     package_dir={"": "src"},
-    # If your package is a single module, use this instead of 'packages':
-    # py_modules=['mypackage'],
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
     install_requires=required,
     extras_require=EXTRAS,
     include_package_data=True,
     license="MIT",
-    # If you want to define classifiers
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -134,8 +165,8 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
-    # $ setup.py publish support.
     cmdclass={
+        "custom_build": CustomBuildCommand,
         "upload": UploadCommand,
     },
     project_urls={
