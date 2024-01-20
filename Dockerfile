@@ -1,5 +1,4 @@
-# Setting global ARGs enable to access their values in any of the latter stage (cf. https://github.com/moby/moby/issues/38379#issuecomment-447835596)
-ARG IMAGE=ubuntu:jammy
+ARG IMAGE=python:3.10.12
 
 FROM $IMAGE
 
@@ -37,11 +36,7 @@ RUN sudo apt-get update \
 	&& sudo apt-get install -y \
 		build-essential \
 		software-properties-common \
-	    python-is-python3 \
-        python3.10-venv \
-        python3-pip \
         git \
-		wget \
 		ca-certificates
 
 # Create and activate a venv
@@ -49,4 +44,13 @@ ENV VIRTUAL_ENV="${USER_HOME}/opt/ray-ease"
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN pip install poetry
+# Ensure the installation of all additional packages
+COPY requirements.txt /tmp/packages/
+COPY dev-requirements.txt /tmp/packages/
+
+RUN pip install -r /tmp/packages/requirements.txt
+RUN pip install -r /tmp/packages/dev-requirements.txt
+
+
+# Clean up
+RUN sudo rm -r /tmp/packages
