@@ -87,6 +87,9 @@ class BumpVersion(Command):
         self.value = None
 
     def finalize_options(self) -> None:
+        def __get_current_level_value() -> int:
+            return int(about["__version__"].split(".")[self.level])
+
         if self.level not in ("major", "minor", "micro"):
             raise ValueError(
                 f"The given value, {self.level}, for parameter --level is invalid. Available choices are: "
@@ -97,25 +100,25 @@ class BumpVersion(Command):
             self.level = ["major", "minor", "micro"].index(self.level)
 
         if self.value is None:
-
-            def __get_current_level_value() -> int:
-                return int(about["__version__"].split(".")[self.level])
-
             self.value = __get_current_level_value() + 1
 
         if not isinstance(self.value, int):
             try:
                 self.value = eval(self.value)
                 if not isinstance(self.value, int):
-                    raise TypeError(
-                        f"The given value, {self.value}, for parameter --value is of type={type(self.value)} while "
-                        "only integers are allowed."
-                    )
+                    raise TypeError
 
             except:
                 raise TypeError(
                     f"The given value, {self.value}, for parameter --value is of type={type(self.value)} while "
                     "only integers are allowed."
+                )
+
+            current_value = __get_current_level_value()
+            if self.value < current_value:
+                raise ValueError(
+                    f"The given value, {self.value}, for parameter --value is lower than the current value, "
+                    f"{current_value}, for target level. This is prohibited."
                 )
 
     def run(self) -> None:
