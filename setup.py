@@ -59,6 +59,88 @@ def _load_from_requirements():
 required = _load_from_requirements()
 
 
+class BumpVersion(Command):
+    """Support setup.py bump --level=<given level> [--value=<to given value>]."""
+
+    description = "Bump the version of the package."
+    user_options = [
+        (
+            "level=",
+            "l",
+            "The level of the version bump, e.g. `minor` will increment the middle number of the version.",
+        ),
+        ("value=", "v", "The value to which the number should be bumped."),
+    ]
+
+    @staticmethod
+    def status(s: str) -> None:
+        """Prints things in bold.
+
+        :param s: The message to print in the status.
+        :type s: str
+        """
+
+        print(f"\033[1m{s}\033[0m")
+
+    def initialize_options(self) -> None:
+        self.level = None
+        self.value = None
+
+    def finalize_options(self) -> None:
+        if self.level not in ("major", "minor", "micro"):
+            raise ValueError(
+                f"The given value, {self.level}, for parameter --level is invalid. Available choices are: "
+                "`major`, `minor` and `micro` each bumps respectively x, y, and z in a x.y.z version "
+                "convention."
+            )
+        else:
+            self.level = ["major", "minor", "micro"].index(self.level)
+
+        if self.value is None:
+
+            def __get_current_level_value() -> int:
+                return int(about["__version__"].split(".")[self.level])
+
+            self.value = __get_current_level_value() + 1
+
+        if not isinstance(self.value, int):
+            try:
+                self.value = eval(self.value)
+                if not isinstance(self.value, int):
+                    raise TypeError(
+                        f"The given value, {self.value}, for parameter --value is of type={type(self.value)} while "
+                        "only integers are allowed."
+                    )
+
+            except:
+                raise TypeError(
+                    f"The given value, {self.value}, for parameter --value is of type={type(self.value)} while "
+                    "only integers are allowed."
+                )
+
+    def run(self) -> None:
+        self.status("Bumping version...")
+        print(f"With level={['major', 'minor', 'micro'][self.level]} and value={self.value}.")
+
+        with open(os.path.join(here, "src", NAME, "__version__.py"), "r", encoding="utf-8") as f:
+            file = f.readlines()
+
+        with open(os.path.join(here, "src", NAME, "__version__.py"), "w", encoding="utf-8") as f:
+            for i, line in enumerate(file):
+                if "VERSION" in line:
+                    tmp = about["__version__"].split(".")
+                    tmp[self.level] = str(self.value)
+
+                    new_line = f"VERSION = ({', '.join(tmp)})\n"
+                    break
+
+            file[i] = new_line
+            f.write("".join(file))
+
+        print(f"From {about['__version__']} -> {'.'.join(tmp)}.")
+        sys.exit()
+
+
 class CustomBuildCommand(Command):
     """Support setup.py custom_build."""
 
@@ -95,7 +177,7 @@ class CustomBuildCommand(Command):
 
 
 class UploadCommand(Command):
-    """Support setup.py upload."""
+    """Support setup.py upload [--repository=<repository type>]."""
 
     description = "Upload the package."
     user_options = [
@@ -117,8 +199,9 @@ class UploadCommand(Command):
 
     def finalize_options(self) -> None:
         if self.repository not in ("pypi", "testpypi"):
-            raise Exception(
-                f"The given value ({self.repository}) for parameter --repository is invalid. Available choices are: `pypi` and `testpypi`."
+            raise ValueError(
+                f"The given value, {self.repository}, for parameter --repository is invalid. Available "
+                "choices are: `pypi` and `testpypi`."
             )
 
     def run(self) -> None:
@@ -166,6 +249,7 @@ setup(
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
     cmdclass={
+        "bump": BumpVersion,
         "custom_build": CustomBuildCommand,
         "upload": UploadCommand,
     },
