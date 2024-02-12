@@ -1,13 +1,14 @@
 import inspect
 import os
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Generator, Iterable, Optional, TypeVar, overload
 
 import ray
 import tqdm
 from ray._private.worker import BaseContext
 
 from .remote_as_local import remote_actor_as_local
-from .utils import overload
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext]:
@@ -39,7 +40,7 @@ def init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext
         raise ValueError(f"{config} is not one of the allowed configurations (serial and ray).")
 
 
-def _parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: Any) -> Callable[..., Any]:
+def _parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
     """This represents the current operational core encasing the ray.remote decorator. To ensure seamless
     utilization, given its dependence on whether ray initialization has occurred, this core function is
     enveloped by another layer. This added layer serves to defer the instantiation of the decorated
@@ -85,7 +86,14 @@ def _parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs:
 
 
 @overload
-def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: Any) -> Callable[..., Any]:
+def parallelize(callable_obj: F) -> F: ...
+
+
+@overload
+def parallelize(*ray_args: Any, **ray_kwargs: Any) -> F: ...
+
+
+def parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
     """A decorator designed to wrap the ray.remote decorator. Its purpose is to enable the seamless use of
     the Ray framework without introducing syntax overhead. When applied to functions and classes, the
     decorated elements behave as if they were local functions and classes, effectively eliminating the need
@@ -104,9 +112,9 @@ def parallelize(callable_obj: Callable[..., Any], *ray_args: Any, **ray_kwargs: 
     ray.remote.
 
     :param callable_obj: Either a function or a class to parallelize with the Ray framework.
-    :type callable_obj: Callable[..., Any]
+    :type callable_obj: F
     :return: The decorated callable (remote function or actor).
-    :rtype: Callable[..., Any]
+    :rtype: F
     """
 
     class _Wrapper:
@@ -153,6 +161,9 @@ def retrieve(
     """
 
     if os.getenv("RAY_EASE") in ["ray"]:
+        if isinstance(loop, Generator):
+            loop = list(loop)
+
         if parallel_progress:
             # Remove eventual total key-value because automatically computed hereunder
             parallel_progress_kwargs.pop("total", None)
