@@ -142,13 +142,19 @@ def parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
 
 
 def retrieve(
-    loop: Iterable[Any], parallel_progress: bool = False, parallel_progress_kwargs: Dict[str, Any] = {}
+    loop: Iterable[Any],
+    ordered: bool = False,
+    parallel_progress: bool = False,
+    parallel_progress_kwargs: Dict[str, Any] = {},
 ) -> Iterable[Any]:
     """Retrieve the results from a pseudo-parallelized loop. It is a pseudo-parallelized rather than a
     parallelized loop because if Ray is not initialized, then the loop is serial instead.
 
     :param loop: The pseudo-parallelized loop.
     :type loop: Iterable[Any]
+    :param ordered: Whether the order should be kept or not, cf. Ray anti-pattern using `.wait()` rather
+    than `.get()` (https://docs.ray.io/en/latest/ray-core/patterns/ray-get-submission-order.html).
+    :type ordered: Iterable[Any]
     :param parallel_progress: Whether to display the progression bar with the `tqdm` package or not. This
     argument is exclusively useful when parallelizing as the computations are performed when `ray.get()` is
     called. In serial computation, everything is already finished at this stage. Defaults to False.
@@ -164,11 +170,28 @@ def retrieve(
         if isinstance(loop, Generator):
             loop = list(loop)
 
-        if parallel_progress:
-            # Remove eventual total key-value because automatically computed hereunder
-            parallel_progress_kwargs.pop("total", None)
-            return [ray.get(obj) for obj in tqdm.tqdm(loop, total=len(loop), **parallel_progress_kwargs)]
+        # Remove eventual total key-value because automatically computed hereunder
+        parallel_progress_kwargs.pop("total", None)
 
-        return ray.get(loop)
+        # Disable the progress bar if not desired
+        if not parallel_progress:
+            parallel_progress_kwargs["disable"] = True
+
+        progress = tqdm.tqdm(range(len(loop)), **parallel_progress_kwargs)
+
+        resulting_loop = []
+        if ordered:
+            for obj in loop:
+                resulting_loop.append(ray.get(obj))
+                progress.update()
+        else:
+            unfinished = loop
+            while unfinished:
+                # Returns the first ObjectRef that is ready.
+                finished, unfinished = ray.wait(unfinished, num_returns=1)
+                resulting_loop.append(ray.get(finished[0]))
+                progress.update()
+
+        return resulting_loop
 
     return loop
