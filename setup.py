@@ -211,16 +211,22 @@ class UploadCommand(Command):
         self.status("Check dist/* via Twine...")
         os.system("twine check dist/*")
 
+        from twine.utils import get_config
+
+        secrets = get_config("./.pypirc")
+        username = secrets[self.repository].get("username")
+        api_token = secrets[self.repository].get("password")
+
         if self.repository == "pypi":
             self.status("Uploading the package to PyPI via Twine...")
-            os.system(f"twine upload dist/*")
+            os.system(f"twine upload dist/* -u {username} -p {api_token}")
+
+            self.status("Pushing git tags...")
+            os.system(f"git tag v{about['__version__']}")
+            os.system("git push --tags")
         else:
             self.status(f"Uploading the package to {self.repository} via Twine...")
-            os.system(f"twine upload -r {self.repository} dist/*")
-
-        self.status("Pushing git tags...")
-        os.system(f"git tag v{about['__version__']}")
-        os.system("git push --tags")
+            os.system(f"twine upload -r {self.repository} dist/* -u {username} -p {api_token}")
 
         sys.exit()
 
@@ -244,7 +250,7 @@ setup(
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-        "License :: OSI Approved :: MIT",
+        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
         f"Programming Language :: Python :: {list(filter(lambda x: x.isnumeric() , REQUIRES_PYTHON))[0]}",
         f"Programming Language :: Python :: {''.join(filter(lambda x: x in '.1234567890', REQUIRES_PYTHON))}",
