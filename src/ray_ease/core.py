@@ -93,7 +93,7 @@ def parallelize(callable_obj: F) -> F: ...
 def parallelize(*ray_args: Any, **ray_kwargs: Any) -> F: ...
 
 
-def parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
+def parallelize(callable_obj: Optional[F] = None, *ray_args: Any, **ray_kwargs: Any) -> F:
     """A decorator designed to wrap the ray.remote decorator. Its purpose is to enable the seamless use of
     the Ray framework without introducing syntax overhead. When applied to functions and classes, the
     decorated elements behave as if they were local functions and classes, effectively eliminating the need
@@ -111,14 +111,14 @@ def parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
     Additionally, the ray.remote args and kwargs can be provided to this decorator and are used when calling
     ray.remote.
 
-    :param callable_obj: Either a function or a class to parallelize with the Ray framework.
-    :type callable_obj: F
+    :param callable_obj: Either a function or a class to parallelize with the Ray framework, defaults to None.
+    :type callable_obj: Optional[F], optional
     :return: The decorated callable (remote function or actor).
     :rtype: F
     """
 
     class _Wrapper:
-        def __init__(self, callable_obj: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        def __init__(self, callable_obj: F, *args: Any, **kwargs: Any) -> None:
             self.callable_obj = callable_obj
             self.args = args
             self.kwargs = kwargs
@@ -138,7 +138,10 @@ def parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
 
             return usable_callable_obj(*usage_args, **usage_kwargs)
 
-    return _Wrapper(callable_obj, *ray_args, **ray_kwargs)
+    if callable_obj is not None:
+        return _Wrapper(callable_obj, *ray_args, **ray_kwargs)
+    else:
+        return lambda callable_obj: _Wrapper(callable_obj, *ray_args, **ray_kwargs)
 
 
 def retrieve(
