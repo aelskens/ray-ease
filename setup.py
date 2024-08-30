@@ -211,22 +211,16 @@ class UploadCommand(Command):
         self.status("Check dist/* via Twine...")
         os.system("twine check dist/*")
 
-        from twine.utils import get_config
-
-        secrets = get_config("./.pypirc")
-        username = secrets[self.repository].get("username")
-        api_token = secrets[self.repository].get("password")
-
         if self.repository == "pypi":
             self.status("Uploading the package to PyPI via Twine...")
-            os.system(f"twine upload dist/* -u {username} -p {api_token}")
+            os.system("twine upload dist/*")
 
             self.status("Pushing git tags...")
             os.system(f"git tag v{about['__version__']}")
             os.system("git push --tags")
         else:
             self.status(f"Uploading the package to {self.repository} via Twine...")
-            os.system(f"twine upload -r {self.repository} dist/* -u {username} -p {api_token}")
+            os.system(f"twine upload -r {self.repository} dist/*")
 
         sys.exit()
 
