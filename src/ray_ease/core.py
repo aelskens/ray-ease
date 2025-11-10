@@ -9,6 +9,7 @@ from ray._private.worker import BaseContext
 from .remote_as_local import remote_actor_as_local
 
 F = TypeVar("F", bound=Callable[..., Any])
+O = TypeVar("O")
 
 
 def init(config: str = "ray", *args: Any, **kwargs: Any) -> Optional[BaseContext]:
@@ -144,34 +145,60 @@ def parallelize(callable_obj: Optional[F] = None, *ray_args: Any, **ray_kwargs: 
         return lambda callable_obj: _Wrapper(callable_obj, *ray_args, **ray_kwargs)
 
 
+# In both serial and ray, for Iterable[func() | Object.method() | Task() | Actor.method()]
+@overload
 def retrieve(
-    loop: Iterable[Any],
+    object_refs: Iterable[Any],
     ordered: bool = False,
     parallel_progress: bool = False,
     parallel_progress_kwargs: Dict[str, Any] = {},
-) -> Iterable[Any]:
-    """Retrieve the results from a pseudo-parallelized loop. It is a pseudo-parallelized rather than a
-    parallelized loop because if Ray is not initialized, then the loop is serial instead.
+) -> Iterable[Any]: ...
 
-    :param loop: The pseudo-parallelized loop.
-    :type loop: Iterable[Any]
+
+# In both serial and ray, for Actor.method()
+@overload
+def retrieve(
+    object_refs: Any,
+    ordered: bool = False,
+    parallel_progress: bool = False,
+    parallel_progress_kwargs: Dict[str, Any] = {},
+) -> Any: ...
+
+
+def retrieve(
+    object_refs: Iterable[Any] | Any,
+    ordered: bool = False,
+    parallel_progress: bool = False,
+    parallel_progress_kwargs: Dict[str, Any] = {},
+) -> Iterable[Any] | Any:
+    """Retrieve the results from a pseudo-parallelized iterable or object. It is a pseudo-parallelized rather
+    than a parallelized iterable or object because if Ray is not initialized, then the iterabel or object is
+    serial instead.
+
+    :param object_refs: The pseudo-parallelized iterable or object.
+    :type loop: Iterable[Any] | Any
     :param ordered: Whether the order should be kept or not, cf. Ray anti-pattern using `.wait()` rather
-    than `.get()` (https://docs.ray.io/en/latest/ray-core/patterns/ray-get-submission-order.html).
+    than `.get()` (https://docs.ray.io/en/latest/ray-core/patterns/ray-get-submission-order.html). Ignored if
+    object_refs is not an iterable, defaults to False.
     :type ordered: Iterable[Any]
     :param parallel_progress: Whether to display the progression bar with the `tqdm` package or not. This
     argument is exclusively useful when parallelizing as the computations are performed when `ray.get()` is
-    called. In serial computation, everything is already finished at this stage. Defaults to False.
+    called. In serial computation, everything is already finished at this stage. Ignored if object_refs is not
+    an iterable, defaults to False.
     :type parallel_progress: bool, optional
-    :param parallel_progress_kwargs: A dictionary of the traditional arguments allowed in `tqdm.tqdm()`,
-    defaults to {}.
+    :param parallel_progress_kwargs: A dictionary of the traditional arguments allowed in `tqdm.tqdm()`. Ignored
+    if object_refs is not an iterable, defaults to {}.
     :type parallel_progress_kwargs: Dict[str, Any], optional
-    :return: The resulting iterable.
-    :rtype: Iterable[Any]
+    :return: The results of each element call from the iterable or of the object call.
+    :rtype: Iterable[Any] | Any
     """
 
     if os.getenv("RAY_EASE") in ["ray"]:
-        if isinstance(loop, Generator):
-            loop = list(loop)
+        if not isinstance(object_refs, Iterable):
+            return ray.get(object_refs)
+
+        if isinstance(object_refs, Generator):
+            object_refs = list(object_refs)
 
         # Remove eventual total key-value because automatically computed hereunder
         parallel_progress_kwargs.pop("total", None)
@@ -180,21 +207,21 @@ def retrieve(
         if not parallel_progress:
             parallel_progress_kwargs["disable"] = True
 
-        progress = tqdm.tqdm(range(len(loop)), **parallel_progress_kwargs)
+        progress = tqdm.tqdm(range(len(object_refs)), **parallel_progress_kwargs)
 
-        resulting_loop = []
+        results = []
         if ordered:
-            for obj in loop:
-                resulting_loop.append(ray.get(obj))
+            for obj in object_refs:
+                results.append(ray.get(obj))
                 progress.update()
         else:
-            unfinished = loop
+            unfinished = object_refs
             while unfinished:
                 # Returns the first ObjectRef that is ready.
                 finished, unfinished = ray.wait(unfinished, num_returns=1)
-                resulting_loop.append(ray.get(finished[0]))
+                results.append(ray.get(finished[0]))
                 progress.update()
 
-        return resulting_loop
+        return results
 
-    return loop
+    return object_refs
