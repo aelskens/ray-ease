@@ -7,7 +7,6 @@ Note that this still works when executed in a serial manner by providing `-c ser
 
 import argparse
 import time
-from typing import Dict
 
 from psutil import Process
 
@@ -48,12 +47,12 @@ class SomeStuff:
         self.outputs = {}
 
     @rez.parallelize
-    def create_subdict(self, key: int) -> Dict[int, int]:
+    def create_subdict(self, key: int) -> dict[int, int]:
         time.sleep(1)
         cpu_id = Process().cpu_num()
         return {key: cpu_id}
 
-    def populate(self, d: Dict[int, int]) -> None:
+    def populate(self, d: dict[int, int]) -> None:
         tmp = rez.retrieve([__class__.create_subdict(self, k) for k in d.keys()])
         for sd in tmp:
             self.outputs.update(sd)
