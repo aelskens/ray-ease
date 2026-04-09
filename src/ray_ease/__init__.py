@@ -7,3 +7,4 @@ except PackageNotFoundError:
     __version__ = "dev"
 
 from .core import init, parallelize, retrieve
+from .registry import Registry
