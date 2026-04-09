@@ -1,3 +1,16 @@
+"""Utility for calling Ray actor methods with ordinary Python syntax.
+
+The single public symbol exported from this module is
+:func:`remote_actor_as_local`, a memoised factory that, given an unwrapped class,
+returns a wrapper class whose instances forward every public method call to the
+corresponding ``.remote()`` invocation on a live Ray actor handle.  Callers can
+opt into blocking behaviour on a per-call basis via the ``block`` keyword argument
+(default ``False``).
+
+This module is an internal implementation detail of ray-ease; end-users interact
+with it indirectly through :func:`ray_ease.parallelize`.
+"""
+
 import inspect
 from functools import cache
 from typing import Any, Callable
@@ -8,91 +21,118 @@ from ray.actor import ActorClass
 
 @cache
 def remote_actor_as_local(base_cls: Callable[..., Any]) -> Callable[..., Any]:
-    """Closure to give a base class from which the RemoteActorAsLocal wrapper will inherite.
+    """Return a wrapper class that makes a Ray actor look like a local object.
 
-    :param base_cls: The base class which is transformed into a remote actor and then wrapped by
-    the RemoteActorAsLocal class.
+    The returned class inherits from *base_cls* and re-binds every public method
+    so it can be called without ``.remote()`` syntax.  Dunder methods (e.g.
+    ``__reduce__``) are forwarded directly to the underlying actor handle so that
+    third-party code such as pickle continues to work transparently.
+
+    Results are decorated by default with ``block=False`` (i.e. they return a Ray
+    ``ObjectRef``).  Pass ``block=True`` to any method call to block until the
+    remote call returns its value directly.
+
+    The function is memoised via :func:`functools.cache` so that the dynamic class
+    is created only once per unique *base_cls*, regardless of how many actor
+    instances are wrapped.
+
+    Adapted from
+    https://github.com/JaneliaSciComp/ray-janelia/blob/main/remote_as_local_wrapper.py.
+
+    :param base_cls: The original (unwrapped) class whose methods will be
+        re-bound for remote-as-local calls.
     :type base_cls: Callable[..., Any]
-    :return: The RemoteActorAsLocal wrapping class that has inherited from the base class.
+    :return: A ``RemoteActorAsLocal`` class whose constructor accepts the remote
+        actor handle as its first argument followed by the usual *base_cls*
+        constructor arguments.
     :rtype: Callable[..., Any]
+
+    Example::
+
+        @ray.remote
+        class Counter:
+            def __init__(self, base_count: int) -> None:
+                self._count = base_count
+
+            def increment(self, inc: int = 1) -> None:
+                self._count += inc
+
+            def get_count(self) -> int:
+                return self._count
+
+        actor = Counter.remote(base_count=0)
+
+        WrapperCls = remote_actor_as_local(Counter)
+        counter = WrapperCls(actor, base_count=0)
+
+        # Call methods without .remote():
+        counter.increment(inc=2)
+
+        # Block until result is ready:
+        value = counter.get_count(block=True)   # returns 2
+
+        # Or get a future and resolve later:
+        future = counter.get_count(block=False)
+        value = ray.get(future)                 # also 2
     """
 
     class RemoteActorAsLocal(base_cls):
-        """This wrapper allows calling methods of remote Ray actors (e.g. classes decorated with
-        @ray.remote) as if they were local. It can be used to wrap classes from external libraries
-        to simplify their integration with Ray.
+        """Wrapper that allows calling Ray actor methods as if they were local.
 
-        Adapted from:
-        https://github.com/JaneliaSciComp/ray-janelia/blob/main/remote_as_local_wrapper.py.
+        Instances of this class hold a reference to a remote actor and expose its
+        public methods via ordinary Python call syntax.  Each method accepts an
+        additional ``block`` keyword argument (default ``False``):
 
-        Example:
-        @ray.remote
-        class Counter():
-            def __init__(self, base_count):
-                self._counts = base_count
-            def increment(self, inc=1):
-                self._counts += inc
-            def get_counts(self):
-                return self._counts
+        * ``block=False``: returns a Ray ``ObjectRef`` (future) immediately.
+        * ``block=True``: calls :func:`ray.get` and returns the resolved value.
 
-        # Normal Ray usage (without this wrapper):
-        kwargs = {"base_count": 0}
-        counter = Counter.remote(**kwargs)  # Instantiate as remote.
-        counter.increment.remote(inc=2)  # Call as remote.
-        obj_ref = counter.get_counts.remote()  # Call as remote; returns a future.
-        ray.get(obj_ref)  # Blocks and returns 2.
-
-        # Using Ray with this wrapper:
-        kwargs = {"base_count": 0}
-        counter = Counter.remote(**kwargs)  # Instantiate as remote.
-        wrapper = remote_actor_as_local(Counter)
-        counter = wrapper(counter, **kwargs)  # Wrap.
-        counter.increment(inc=2)  # Call as local.
-
-        # Can be called to either return a future or block until call returns (the
-        # latter is the default behavior):
-        obj_ref = counter.get_counts(block=False)  # Call as local; returns a future.
-        counter.get_counts(block=True)  # Call as local; blocks and returns 2.
+        This class is generated dynamically by :func:`remote_actor_as_local` and
+        inherits from the original (unwrapped) class so that ``isinstance`` checks
+        and attribute access continue to work as expected.
         """
 
         def __init__(self, remote_handle: ActorClass, *args: Any, **kwargs: Any) -> None:
-            """Constructor of the Wrapper class.
+            """Wrap a remote actor handle.
 
-            :param remote_handle: The remote actor to wrap.
+            :param remote_handle: The Ray actor handle to wrap (obtained from
+                ``SomeClass.remote(...)``).
             :type remote_handle: ray.actor.ActorClass
+            :param args: Positional arguments forwarded to *base_cls.__init__* so
+                that the local mirror has the same attribute state as the actor.
+            :param kwargs: Keyword arguments forwarded to *base_cls.__init__*.
             """
 
-            # This is used to have the same attributes as the base class.
+            # Initialise the base class so local attributes are available.
             super().__init__(*args, **kwargs)
 
             self._remote_handle = remote_handle
 
-            def _remote_caller(method_name: str):
-                """Wrap the remote class's method to mimic local calling."""
+            def _remote_caller(method_name: str) -> Callable[..., Any]:
+                """Create a local-call shim for *method_name* on the remote actor."""
 
-                def _wrapper(*args: Any, block: bool = False, **kwargs: Any):
+                def _wrapper(*args: Any, block: bool = False, **kwargs: Any) -> Any:
                     obj_ref = getattr(self._remote_handle, method_name).remote(*args, **kwargs)
 
                     # Block until called method returns.
                     if block:
                         return ray.get(obj_ref)
+
                     # Don't block and return a future.
-                    else:
-                        return obj_ref
+                    return obj_ref
 
                 return _wrapper
 
             for name, _ in inspect.getmembers(self._remote_handle):
-                # Wrap public methods for remote-as-local calls.
                 if not name.startswith("__"):
+                    # Re-bind public methods as local-call shims.
                     setattr(self, name, _remote_caller(name))
-                # Reassign dunder members for API-unaware callers (e.g. pickle).
-                # For example, it is doing the following reassignment:
-                # self.__reduce__ = self._remote_handle.__reduce__
                 else:
+                    # Forward dunder members directly to the actor handle so that
+                    # third-party code (e.g. pickle) continues to work.
+                    # e.g.: self.__reduce__ = self._remote_handle.__reduce_
                     setattr(self, name, getattr(self._remote_handle, name))
 
-        def __dir__(self):
+        def __dir__(self) -> list[str]:
             return dir(self._remote_handle)
 
     return RemoteActorAsLocal

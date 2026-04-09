@@ -1,3 +1,9 @@
+"""Tests for @rez.parallelize applied to functions in serial mode.
+
+Mirrors test_ray_task.py; verifies that ordered and unordered retrieval produce
+correct results when rez.init("serial") is used and no Ray cluster is involved.
+"""
+
 import src.ray_ease as rez
 
 rez.init("serial")

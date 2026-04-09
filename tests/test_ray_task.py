@@ -1,3 +1,9 @@
+"""Tests for @rez.parallelize applied to functions in parallel (Ray) mode.
+
+Covers ordered and unordered retrieval of futures returned by a parallelized
+function.
+"""
+
 import src.ray_ease as rez
 
 rez.init()

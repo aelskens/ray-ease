@@ -1,3 +1,9 @@
+"""Tests for @rez.parallelize applied to classes in serial mode.
+
+Mirrors test_ray_actor.py; verifies that a parallelized class behaves as a plain
+Python class when rez.init("serial") is used and no Ray cluster is involved.
+"""
+
 import src.ray_ease as rez
 
 rez.init("serial")

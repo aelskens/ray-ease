@@ -1,3 +1,9 @@
+"""Tests for @rez.parallelize applied to classes (Ray actors) in parallel mode.
+
+Covers basic actor instantiation, method calls, and result retrieval via
+rez.retrieve() for a stateful counter actor.
+"""
+
 import src.ray_ease as rez
 
 rez.init()
