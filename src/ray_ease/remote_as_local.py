@@ -88,7 +88,17 @@ def remote_actor_as_local(base_cls: Callable[..., Any]) -> Callable[..., Any]:
 
         This class is generated dynamically by :func:`remote_actor_as_local` and
         inherits from the original (unwrapped) class so that ``isinstance`` checks
-        and attribute access continue to work as expected.
+        continue to work as expected.
+
+        .. Warning::
+            This wrapper does **not** call ``super().__init__()`` and therefore holds no
+            local copy of the actor's attributes.  Direct attribute access (e.g.
+            ``o.attribute``) will raise :class:`AttributeError` in parallel mode, while
+            it works as expected in serial mode because ``o`` is then a plain Python
+            object.  This asymmetry is an inherent limitation of the remote-actor model,
+            the actor owns its state exclusively and mutations inside its methods are
+            not observable from outside.  All reads of mutable state must go through a
+            method call resolved with :func:`ray_ease.retrieve`.
         """
 
         def __init__(self, remote_handle: ActorClass, *args: Any, **kwargs: Any) -> None:
@@ -102,10 +112,7 @@ def remote_actor_as_local(base_cls: Callable[..., Any]) -> Callable[..., Any]:
             :param kwargs: Keyword arguments forwarded to *base_cls.__init__*.
             """
 
-            # Initialise the base class so local attributes are available.
-            super().__init__(*args, **kwargs)
-
-            self._remote_handle = remote_handle
+            object.__setattr__(self, "_remote_handle", remote_handle)
 
             def _remote_caller(method_name: str) -> Callable[..., Any]:
                 """Create a local-call shim for *method_name* on the remote actor."""

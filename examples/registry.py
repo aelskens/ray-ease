@@ -110,7 +110,7 @@ def run_pipeline(image: str, pipeline: tuple[str, ...], registry: Any) -> list[s
     reused.  Otherwise the stage is computed and its result is stored in the
     registry for future jobs to reuse.
 
-    .. note::
+    .. Note::
         Because *registry* is a :class:`_RegistryProxy` in parallel mode, its
         methods (:meth:`~UIDRegistry.contains`, :meth:`~UIDRegistry.get`,
         :meth:`~UIDRegistry.add_uid`) return concrete Python values directly.

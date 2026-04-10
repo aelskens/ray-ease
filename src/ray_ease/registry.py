@@ -107,6 +107,20 @@ class _RegistryProxy:
     The proxy is fully transparent: callers use :meth:`get`, :meth:`add_uid`,
     :meth:`contains`, and :meth:`claim` exactly as they would on the plain actor.
 
+    .. Warning::
+        Direct attribute access on the underlying actor (e.g. ``registry.attribute``)
+        is not supported. Ray actors own their state exclusively inside a remote worker
+        process and plain attributes are not accessible from outside. All reads of mutable
+        state must go through an explicit getter method, which can be called directly
+        without :func:`ray_ease.retrieve` since all methods on this proxy resolve
+        immediately::
+
+            # Correct.
+            value = registry.attribute_getter()
+
+            # Not supported — the attribute does not exist on the actor handle.
+            value = registry.attribute
+
     .. Note::
         Unlike the generic :func:`~ray_ease.remote_as_local.remote_actor_as_local`
         wrapper whose methods return raw ``ObjectRef`` futures, all methods of this
@@ -204,8 +218,19 @@ class _RegistryProxy:
         return ray.get(self._actor.contains.remote(uid))
 
     def __getattr__(self, name: str) -> Any:
-        # Delegate unknown attribute access to the underlying actor handle so
-        # that the proxy remains transparent for methods not listed above.
         if name in ("_actor", "_in_progress"):
             raise AttributeError(name)
-        return getattr(self._actor, name)
+
+        attr = getattr(self._actor, name)
+
+        # If it is a remote method, wrap it so it can be called without .remote()
+        # and resolves immediately, consistent with the rest of the proxy interface.
+        if callable(attr):
+
+            def _resolved(*args: Any, **kwargs: Any) -> Any:
+                return ray.get(attr.remote(*args, **kwargs))
+
+            return _resolved
+
+        # For non-callable attributes, return the value directly.
+        return attr

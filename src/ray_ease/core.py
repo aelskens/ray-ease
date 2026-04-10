@@ -148,7 +148,7 @@ def _parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
 
                 def __call__(self, *args: Any, **kwargs: Any) -> Any:
                     remoteHandler = remote_actor_as_local(initial_cls)
-                    return remoteHandler(self.callable_obj.remote(*args, **kwargs), *args, **kwargs)
+                    return remoteHandler(self.callable_obj.remote(*args, **kwargs))
 
     return _Wrapper(callable_obj)
 
@@ -191,6 +191,21 @@ def parallelize(callable_obj: Optional[F] = None, *ray_args: Any, **ray_kwargs: 
     Memoisation ensures that the internal ``ray.remote`` wrapping is performed at most
     once per unique set of Ray arguments, keeping overhead minimal across repeated
     instantiations.
+
+    .. Warning::
+        Direct attribute access on parallelized class instances (e.g. ``o.attribute``) is
+        not transparent between serial and parallel modes.  In serial mode ``o.attribute``
+        returns the current value because ``o`` is a plain Python object.  In
+        parallel mode it returns the value frozen at construction time, because the
+        local mirror is never updated to reflect mutations that happen on the remote
+        actor.  All reads of mutable state must go through a method call resolved
+        with :func:`retrieve`::
+
+            # Correct in both modes.
+            value = rez.retrieve(o.attribute_getter())
+
+            # Broken in parallel mode, returns the construction-time snapshot.
+            value = o.attribute
 
     :param callable_obj: The function or class to parallelize.  When the decorator is
         used *without* parentheses this is the decorated object; when used *with*

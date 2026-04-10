@@ -2,9 +2,15 @@
 
 Covers:
 - add_uid / contains / get correctness and default fallback values.
-- Stage-skipping optimisation: jobs sharing a common stage prefix (e.g. "a_0"
-  and "b_0" both starting with stage "a") reuse already-computed results stored
-  in the UIDRegistry actor rather than recomputing them.
+- Proxy methods return concrete values directly — rez.retrieve() must not be
+  used to wrap them (would raise ValueError).
+- Unknown methods on the proxy are callable without .remote() and resolve
+  immediately.
+- Direct attribute access on the actor raises AttributeError — a dedicated
+  getter method must be used instead.
+- Stage-skipping optimisation: jobs sharing a common stage prefix reuse
+  already-computed results stored in the UIDRegistry actor rather than
+  recomputing them.
 - rez.retrieve(ordered=True) returns results in submission order.
 - Claim/wait semantics: multiple parallel jobs requesting the same UID each
   receive the correct result without duplicating computation.
@@ -12,6 +18,8 @@ Covers:
 
 from time import sleep
 from typing import Any
+
+import pytest
 
 import src.ray_ease as rez
 
@@ -31,6 +39,12 @@ class UIDRegistry(rez.Registry):
 
     def contains(self, uid: str) -> bool:
         return uid in self.finished_uids
+
+    def get_finished_uids(self) -> dict[str, str]:
+        return self.finished_uids
+
+    def __len__(self) -> int:
+        return len(self.finished_uids)
 
 
 def _slow_stage(s: str) -> str:
@@ -65,6 +79,7 @@ def _claim_job(uid: str, registry: rez.Registry) -> str:
 
 
 def test_registry_add_and_contains() -> None:
+    """Explicit proxy methods return concrete values without rez.retrieve()."""
     registry = UIDRegistry()
     assert not registry.contains("uid_a")
     registry.add_uid("uid_a", "value_a")
@@ -75,6 +90,42 @@ def test_registry_add_and_contains() -> None:
 def test_registry_default_value() -> None:
     registry = UIDRegistry()
     assert registry.get("missing_uid", "fallback") == "fallback"
+
+
+def test_proxy_methods_do_not_need_retrieve() -> None:
+    """Wrapping a proxy method call in rez.retrieve() must raise ValueError."""
+    registry = UIDRegistry()
+    registry.add_uid("uid_x", "value_x")
+    with pytest.raises(ValueError):
+        rez.retrieve(registry.contains("uid_x"))
+
+
+def test_unknown_method_callable_without_remote() -> None:
+    """Methods not explicitly defined on the proxy must not require .remote()."""
+    registry = UIDRegistry()
+    registry.add_uid("uid_a", "value_a")
+    registry.add_uid("uid_b", "value_b")
+    result = registry.get_finished_uids()
+    assert result == {"uid_a": "value_a", "uid_b": "value_b"}
+
+
+def test_direct_attribute_access_raises() -> None:
+    """Direct attribute access on the actor must raise AttributeError.
+
+    Actor attributes are private to the remote worker process. All mutable
+    state must be read through a getter method instead.
+    """
+    registry = UIDRegistry()
+    with pytest.raises(AttributeError):
+        _ = registry.finished_uids
+
+
+def test_getter_method_returns_current_state() -> None:
+    """A getter method must reflect mutations made after construction."""
+    registry = UIDRegistry()
+    assert registry.get_finished_uids() == {}
+    registry.add_uid("uid_a", "value_a")
+    assert registry.get_finished_uids() == {"uid_a": "value_a"}
 
 
 def test_stage_skipping_ordered_results() -> None:
