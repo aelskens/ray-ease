@@ -17,7 +17,7 @@ import ray
 import tqdm
 from ray._private.worker import BaseContext
 
-from .registry import Registry, _RegistryProxy
+from .registry import Registry, registry_as_proxy
 from .remote_as_local import remote_actor_as_local
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -138,7 +138,8 @@ def _parallelize(callable_obj: F, *ray_args: Any, **ray_kwargs: Any) -> F:
                     self.callable_obj = callable_obj
 
                 def __call__(self, *args: Any, **kwargs: Any) -> Any:
-                    return _RegistryProxy(self.callable_obj.remote(*args, **kwargs))
+                    ProxyCls = registry_as_proxy(initial_cls)
+                    return ProxyCls(self.callable_obj.remote(*args, **kwargs))
 
         else:
 

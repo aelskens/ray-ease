@@ -3,11 +3,11 @@
 Covers:
 - Basic actor instantiation, method calls, and result retrieval via
   rez.retrieve().
-- Direct attribute access raises AttributeError — the actor owns its state
+- Direct attribute access raises AttributeError, the actor owns its state
   exclusively inside a remote worker process.
 - A getter method reflects the current actor state, including mutations made
   after construction.
-- Method calls do not require .remote() — the RemoteActorAsLocal wrapper
+- Method calls do not require .remote(), the RemoteActorAsLocal wrapper
   handles this transparently.
 """
 
@@ -77,7 +77,7 @@ def test_getter_method_reflects_current_state() -> None:
 
 
 def test_method_callable_without_remote() -> None:
-    """Actor methods must not require .remote() — the wrapper handles it."""
+    """Actor methods must not require .remote(), the wrapper handles it."""
     c = Counter(start=0)
     # If .remote() were required, calling c.incr(1) directly would either
     # raise AttributeError or return a coroutine rather than executing.

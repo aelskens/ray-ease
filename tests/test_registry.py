@@ -2,12 +2,14 @@
 
 Covers:
 - add_uid / contains / get correctness and default fallback values.
-- Proxy methods return concrete values directly — rez.retrieve() must not be
+- Proxy methods return concrete values directly, rez.retrieve() must not be
   used to wrap them (would raise ValueError).
 - Unknown methods on the proxy are callable without .remote() and resolve
   immediately.
-- Direct attribute access on the actor raises AttributeError — a dedicated
+- Direct attribute access on the actor raises AttributeError, a dedicated
   getter method must be used instead.
+- Dunder methods defined on the Registry subclass (__len__, __repr__, __str__)
+  are forwarded automatically by registry_as_proxy and work transparently.
 - Stage-skipping optimisation: jobs sharing a common stage prefix reuse
   already-computed results stored in the UIDRegistry actor rather than
   recomputing them.
@@ -31,6 +33,15 @@ class UIDRegistry(rez.Registry):
     def __init__(self) -> None:
         self.finished_uids: dict[str, str] = {}
 
+    def __len__(self) -> int:
+        return len(self.finished_uids)
+
+    def __repr__(self) -> str:
+        return f"UIDRegistry({self.finished_uids!r})"
+
+    def __str__(self) -> str:
+        return f"UIDRegistry with {len(self.finished_uids)} entries"
+
     def get(self, uid: str, default: Any = None) -> Any:
         return self.finished_uids.get(uid, default)
 
@@ -42,9 +53,6 @@ class UIDRegistry(rez.Registry):
 
     def get_finished_uids(self) -> dict[str, str]:
         return self.finished_uids
-
-    def __len__(self) -> int:
-        return len(self.finished_uids)
 
 
 def _slow_stage(s: str) -> str:
@@ -126,6 +134,37 @@ def test_getter_method_returns_current_state() -> None:
     assert registry.get_finished_uids() == {}
     registry.add_uid("uid_a", "value_a")
     assert registry.get_finished_uids() == {"uid_a": "value_a"}
+
+
+def test_len_reflects_current_state() -> None:
+    """__len__ must be forwarded to the actor and reflect mutations."""
+    registry = UIDRegistry()
+    assert len(registry) == 0
+    registry.add_uid("uid_a", "value_a")
+    assert len(registry) == 1
+    registry.add_uid("uid_b", "value_b")
+    assert len(registry) == 2
+
+
+def test_repr_is_forwarded() -> None:
+    """__repr__ must be forwarded to the actor and return a non-empty string."""
+    registry = UIDRegistry()
+    registry.add_uid("uid_a", "value_a")
+    real_value = {"uid_a": "value_a"}
+    result = repr(registry)
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert result == f"UIDRegistry({real_value!r})"
+
+
+def test_str_is_forwarded() -> None:
+    """__str__ must be forwarded to the actor and return a non-empty string."""
+    registry = UIDRegistry()
+    registry.add_uid("uid_a", "value_a")
+    result = str(registry)
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert result == f"UIDRegistry with 1 entries"
 
 
 def test_stage_skipping_ordered_results() -> None:
